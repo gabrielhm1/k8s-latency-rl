@@ -16,11 +16,10 @@ from kubernetes.client.rest import ApiException, RESTClientObject
 import utils.prometheus_metrics as prometheus_metrics
 from utils.action_space import create_state_space
 
-from logging import basicConfig, getLogger, INFO
+from logging import getLogger
 
-formatter = " %(asctime)s | %(filename)s:%(lineno)d | %(message)s |"
-basicConfig(level=INFO, format=formatter)
-logger = getLogger("meetup-scheduler")
+
+logger = getLogger("model_logger")
 
 V1_CLIENT = None  # type: CoreV1Api
 SCHEDULE_STRATEGY = "project=latency-network"
@@ -88,12 +87,15 @@ def schedule_pod(pod_name, node, namespace="onlineboutique"):
         target=target,
     )
     logger.info("Binding Pod: %s  to  Node: %s", pod_name, node)
-    return V1_CLIENT.create_namespaced_pod_binding(
-        pod_name,
-        namespace,
-        body,
-        _preload_content=False,
-    )
+    try:
+        V1_CLIENT.create_namespaced_pod_binding(
+            pod_name,
+            namespace,
+            body,
+            _preload_content=False,
+        )
+    except Exception as e:
+        logger.error("Pod {pod_name} failed to bind to Node {node} due to {e}")
 
 
 def get_pod_node_list(v1_client, namespace, label_selector):
@@ -112,75 +114,6 @@ def get_pod_node_list(v1_client, namespace, label_selector):
     return response
 
 
-def watch_pod_events(namespace="default", pod_scheduled=[]):
-    V1_CLIENT = CoreV1Api()
-    while True:
-        try:
-            logger.info("Checking for pod events....")
-            pods_processed = []
-            try:
-                watcher = watch.Watch()
-                for event in watcher.stream(
-                    V1_CLIENT.list_namespaced_pod,
-                    namespace=namespace,
-                    label_selector=SCHEDULE_STRATEGY,
-                    timeout_seconds=20,
-                ):
-
-                    if event["object"].status.phase == "Pending":
-                        try:
-                            logger.info(
-                                f"Event: {event['type']} {event['object'].kind}, {event['object'].metadata.namespace}, {event['object'].metadata.name}, {event['object'].status.phase}"
-                            )
-                            pod_name = event["object"].metadata.name
-                            if pod_name in pod_scheduled:
-                                logger.info(f"Pod {pod_name} already scheduled")
-                                continue
-                            if pod_name in pods_processed:
-                                logger.info(f"Pod {pod_name} already processed")
-                                continue
-                            pods_processed.append(pod_name)
-
-                            app_name = event["object"].metadata.labels["app"]
-                            logger.info(f"Pod Name: {pod_name}, App Name: {app_name}")
-                            logger.info("Collecting neighbor of %s", app_name)
-                            neighbor_app = prometheus_metrics.create_graph(
-                                app_name, namespace
-                            )
-                            logger.info(f"Neighbor: {neighbor_app}")
-                            app_string = app_name
-                            for app in neighbor_app["destination"]:
-                                app_string += "," + app
-                            for app in neighbor_app["source"]:
-                                app_string += "," + app
-                            neighbor_labels = f"app in ({app_string})"
-
-                            logger.info(f"Getting Nodes")
-                            current_neighbor = get_pod_node_list(
-                                V1_CLIENT, namespace, neighbor_labels
-                            )
-
-                            logger.info(f"Creating State Space")
-                            state_space = create_state_space(current_neighbor, app_name)
-                            with open("data/k8s_ob.csv", "a") as f:
-                                f.write(",".join(map(str, state_space)) + "\n")
-
-                            return state_space
-                        except ApiException as e:
-                            logger.error(json_loads(e.body)["message"])
-                logger.info("Resetting k8s watcher...")
-            except KeyboardInterrupt:
-                logger.exception("Exiting...")
-                sys.exit(0)
-            except Exception as e:
-                logger.error("Error in watcher: %s", e)
-            finally:
-                del watcher
-        except KeyboardInterrupt:
-            logger.exception("Exiting...")
-            sys.exit(0)
-
-
 def get_pod_info(pod_name, app_name, namespace="default"):
     V1_CLIENT = CoreV1Api()
     # logger.info(f"Pod Name: {pod_name}, App Name: {app_name}")
@@ -193,14 +126,13 @@ def get_pod_info(pod_name, app_name, namespace="default"):
     for app in neighbor_app["source"]:
         app_string += "," + app
     neighbor_labels = f"app in ({app_string})"
+    prom_metrics = prometheus_metrics.get_metrics(neighbor_app, app_name, namespace)
 
     logger.info(f"Getting Nodes")
     current_neighbor = get_pod_node_list(V1_CLIENT, namespace, neighbor_labels)
 
     logger.info(f"Creating State Space")
-    state_space = create_state_space(current_neighbor, app_name)
-    with open("data/k8s_state.csv", "a") as f:
-        f.write(",".join(map(str, state_space)) + "\n")
+    state_space = create_state_space(current_neighbor, prom_metrics, app_name)
 
     return state_space
 
@@ -219,13 +151,13 @@ def scheduler_watcher(namespace, pod_scheduled=[]):
             ):
                 if event["object"].status.phase == "Pending":
                     try:
-                        logger.info(
-                            f"Event: {event['type']} {event['object'].kind}, {event['object'].metadata.namespace}, {event['object'].metadata.name}, {event['object'].status.phase}"
-                        )
                         pod_name = event["object"].metadata.name
                         if pod_name in pod_scheduled:
-                            logger.info(f"Pod {pod_name} already scheduled")
+                            logger.debug(f"Pod {pod_name} already scheduled")
                             continue
+                        logger.debug(
+                            f"Event: {event['type']} {event['object'].kind}, {event['object'].metadata.namespace}, {event['object'].metadata.name}, {event['object'].status.phase}"
+                        )
                         app_name = event["object"].metadata.labels["app"]
                         return {
                             "pod_name": pod_name,
@@ -233,7 +165,7 @@ def scheduler_watcher(namespace, pod_scheduled=[]):
                         }
                     except ApiException as e:
                         logger.error(json_loads(e.body)["message"])
-            logger.info("Resetting k8s watcher...")
+            logger.debug("Resetting k8s watcher...")
         except Exception as e:
             logger.error("Error in watcher: %s", e)
         finally:

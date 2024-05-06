@@ -7,7 +7,7 @@
 # 0,  # media bytes trocados
 
 
-def create_state_space(k8s_metrics, service_name):
+def create_state_space(k8s_metrics, prom_metrics, service_name):
     app_services = [
         "frontend",
         "recommendationservice",
@@ -28,22 +28,24 @@ def create_state_space(k8s_metrics, service_name):
             state_space.extend(
                 [
                     1,
-                    len(pod_nodes),
                     pod_nodes.count(nodes[0]),
                     pod_nodes.count(nodes[1]),
                     pod_nodes.count(nodes[2]),
+                    0,
+                    0,
                 ]
             )
         elif pod_nodes is not None:
             state_space.extend(
                 [
                     0,
-                    len(pod_nodes),
                     pod_nodes.count(nodes[0]),
                     pod_nodes.count(nodes[1]),
                     pod_nodes.count(nodes[2]),
+                    int(prom_metrics[app]["avg_request_duration"]),
+                    int(prom_metrics[app]["avg_request_size"]),
                 ]
             )
         else:
-            state_space.extend([0, 0, 0, 0, 0])
+            state_space.extend([0, 0, 0, 0, 0, 0])
     return state_space

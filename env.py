@@ -1,7 +1,7 @@
 import csv
 import datetime
 from datetime import datetime
-import logging
+from logging import getLogger
 import time
 from statistics import mean
 
@@ -14,11 +14,13 @@ from utils.kube_watcher import get_pod_info, scheduler_watcher, schedule_pod
 from utils.prometheus_metrics import get_application_latency
 from utils.save_csv import save_to_csv
 
+
+logger = getLogger("model_logger")
 # Action Moves
 ACTIONS = ["worker-1", "worker-2", "worker-3"]
 NACTIONS = 3
 MAX_STEPS = 10
-MAX_SPREAD = 2  # fault-tolerant
+MAX_SPREAD = 2
 
 APPS = [
     "frontend",
@@ -35,7 +37,6 @@ APPS = [
 
 
 class LatencyAware(gym.Env):
-    """Horizontal Scaling for Online Boutique in Kubernetes - an OpenAI gym environment"""
 
     metadata = {"render.modes": ["human", "ansi", "array"]}
 
@@ -56,16 +57,11 @@ class LatencyAware(gym.Env):
         # Current Step
         self.current_step = 0
 
-        # Multi-Discrete
-        # Deployment: Discrete 11
-        # Action: Discrete 9 - None[0], Add-1[1], Add-2[2], Add-3[3], Add-4[4],
-        #                      Stop-1[5], Stop-2[6], Stop-3[7], Stop-4[8]
-
         self.action_space = spaces.Discrete(NACTIONS)
         self.observation_space = self.get_observation_space()
         # Action and Observation Space
-        # logging.info("[Init] Action Spaces: " + str(self.action_space))
-        # logging.info("[Init] Observation Spaces: " + str(self.observation_space))
+        # logger.info("[Init] Action Spaces: " + str(self.action_space))
+        # logger.info("[Init] Observation Spaces: " + str(self.observation_space))
 
         # Info
         self.total_reward = None
@@ -94,7 +90,7 @@ class LatencyAware(gym.Env):
 
         # Print Step and Total Reward
         # if self.current_step == MAX_STEPS:
-        logging.info(
+        logger.info(
             "[Step {}] | Action (Node): {} | Reward: {} | Total Reward: {}".format(
                 self.current_step,
                 ACTIONS[action],
@@ -108,7 +104,7 @@ class LatencyAware(gym.Env):
         )
 
         if self.current_step == MAX_STEPS:
-            logging.info(
+            logger.info(
                 "[Episode {}] | Total Reward: {}".format(
                     self.episode_count, self.total_reward
                 )
@@ -125,7 +121,6 @@ class LatencyAware(gym.Env):
             )
         self.watch_scheduling_queue()
         ob = self.get_state()
-        logging.info("[Step {}] | State: {}".format(self.current_step, ob))
 
         # return ob, reward, self.episode_over, self.info
         return np.array(ob), reward, self.episode_over, self.info
@@ -156,19 +151,23 @@ class LatencyAware(gym.Env):
 
     def take_action(self, action):
         self.current_step += 1
-        logging.info("Action: %s", action)
+        logger.debug("Action: %s", action)
         node_name = ACTIONS[action]
         schedule_pod(self.current_pod["pod_name"], node_name, self.namespace)
 
     def get_reward(self, action):
         """Calculate Rewards"""
         # Reward based on Keyword!
-        logging.info("Entrou no get_reward")
+        logger.debug("Calculating Reward")
+
         ob = self.get_state()
+
+        with open("data/k8s_state.csv", "a") as f:
+            f.write(",".join(map(str, ob)) + "\n")
         app_item = APPS.index(self.current_pod["app_name"])
 
-        init_index = app_item * 5
-        node_list = ob[init_index + 2 : init_index + 5]
+        init_index = app_item * 6
+        node_list = ob[init_index + 1 : init_index + 4]
         selected_node = node_list[action]
         pod_spread = 0
 
@@ -177,7 +176,7 @@ class LatencyAware(gym.Env):
             if spread_difference > pod_spread:
                 pod_spread = spread_difference
 
-        logging.info("Pod Spread: %s", pod_spread)
+        logger.debug("Pod Spread: %s", pod_spread)
         if self.current_step == MAX_STEPS:
             time.sleep(60)
             reward = get_application_latency(self.namespace)
@@ -209,59 +208,69 @@ class LatencyAware(gym.Env):
 
     def get_observation_space(self):
         return spaces.Box(
-            low=np.zeros(50),
+            low=np.zeros(60),
             high=np.array(
                 [
                     1,  # Current Pod  -- 1) recommendationservice
-                    10,  # Desired Replicas
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
+                    500,  # Average Latency
+                    500,  # Average request size
                     1,  # Current Pod -- 2) productcatalogservice
-                    10,  # Desired Replicas
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
+                    500,  # Average Latency
+                    500,  # Average request size
                     1,  # Current Pod -- 3) cartservice
-                    10,  # Desired Replicas
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
+                    500,  # Average Latency
+                    500,  # Average request size
                     1,  # Current Pod -- 4) adservice
-                    10,  # Desired Replicas
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
+                    500,  # Average Latency
+                    500,  # Average request size
                     1,  # Current Pod -- 5) paymentservice
-                    10,  # Desired Replicas
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
+                    500,  # Average Latency
+                    500,  # Average request size
                     1,  # Current Pod -- 6) shippingservice
-                    10,  # Desired Replicas
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
+                    500,  # Average Latency
+                    500,  # Average request size
                     1,  # Current Pod -- 7) currencyservice
-                    10,  # Desired Replicas
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
+                    500,  # Average Latency
+                    500,  # Average request size
                     1,  # Current Pod -- 8) checkoutservice
-                    10,  # Desired Replicas
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
+                    500,  # Average Latency
+                    500,  # Average request size
                     1,  # Current Pod -- 9) frontend
-                    10,  # Desired Replicas
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
+                    500,  # Average Latency
+                    500,  # Average request size
                     1,  # Current Pod -- 10) emailservice
-                    10,  # Desired Replicas
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
+                    500,  # Average Latency
+                    500,  # Average request size
                 ]
             ),
             dtype=np.int32,
