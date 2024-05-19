@@ -17,10 +17,10 @@ from utils.save_csv import save_to_csv
 
 logger = getLogger("model_logger")
 # Action Moves
-ACTIONS = ["worker-1", "worker-2", "worker-3"]
+ACTIONS = ["worker1", "worker2", "worker3"]
 NACTIONS = 3
 MAX_STEPS = 10
-MAX_SPREAD = 2
+MAX_SPREAD = 4
 
 APPS = [
     "frontend",
@@ -65,7 +65,7 @@ class LatencyAware(gym.Env):
 
         # Info
         self.total_reward = None
-        self.avg_latency = []
+        self.avg_latency = 0
 
         # episode over
         self.episode_over = False
@@ -85,6 +85,7 @@ class LatencyAware(gym.Env):
         self.take_action(action)
 
         # Get reward
+        time.sleep(30)
         reward = self.get_reward(action)
         self.total_reward += reward
 
@@ -115,10 +116,11 @@ class LatencyAware(gym.Env):
             save_to_csv(
                 self.file_results,
                 self.episode_count,
-                self.avg_latency,
+                self.avg_latency/10,
                 self.total_reward,
                 self.execution_time,
             )
+
         self.watch_scheduling_queue()
         ob = self.get_state()
 
@@ -154,6 +156,9 @@ class LatencyAware(gym.Env):
         logger.debug("Action: %s", action)
         node_name = ACTIONS[action]
         schedule_pod(self.current_pod["pod_name"], node_name, self.namespace)
+        self.pod_scheduled.append(self.current_pod["pod_name"])
+
+
 
     def get_reward(self, action):
         """Calculate Rewards"""
@@ -162,31 +167,26 @@ class LatencyAware(gym.Env):
 
         ob = self.get_state()
 
+        # init_index = app_item * 6
+        # node_list = ob[init_index + 1 : init_index + 4]
+        # selected_node = node_list[action]
+        # pod_spread = 0
+
+        # for node in node_list:
+        #     spread_difference = selected_node - node
+        #     if spread_difference > pod_spread:
+        #         pod_spread = spread_difference
+        # logger.debug("Pod Spread: %s", pod_spread)
+
+        reward = get_application_latency(self.namespace)
+        self.avg_latency += reward
+        if reward >= 100:
+            reward = 100
+        
+        ob.append(reward)
         with open("data/k8s_state.csv", "a") as f:
             f.write(",".join(map(str, ob)) + "\n")
-        app_item = APPS.index(self.current_pod["app_name"])
 
-        init_index = app_item * 6
-        node_list = ob[init_index + 1 : init_index + 4]
-        selected_node = node_list[action]
-        pod_spread = 0
-
-        for node in node_list:
-            spread_difference = selected_node - node
-            if spread_difference > pod_spread:
-                pod_spread = spread_difference
-
-        logger.debug("Pod Spread: %s", pod_spread)
-        if self.current_step == MAX_STEPS:
-            time.sleep(60)
-            reward = get_application_latency(self.namespace)
-            self.avg_latency = reward
-            if pod_spread > MAX_SPREAD:
-                reward += reward * 0.1
-        else:
-            reward = 0
-            if pod_spread > MAX_SPREAD:
-                reward += get_application_latency(self.namespace) * 0.1
 
         return -reward
 
@@ -199,12 +199,11 @@ class LatencyAware(gym.Env):
         return ob
 
     def watch_scheduling_queue(self):
-        self.current_pod = scheduler_watcher(self.namespace)
-        # Avoid scheduling the same pod
-        while self.current_pod["pod_name"] in self.pod_scheduled:
-            self.current_pod = scheduler_watcher(self.namespace, self.pod_scheduled)
+        response = {}
+        while response.get("pod_name","") in self.pod_scheduled or not response:
+            response = scheduler_watcher(self.namespace, self.pod_scheduled)
 
-        self.pod_scheduled.append(self.current_pod["pod_name"])
+        self.current_pod = response
 
     def get_observation_space(self):
         return spaces.Box(

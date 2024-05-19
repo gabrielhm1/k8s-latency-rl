@@ -10,13 +10,13 @@ from env import LatencyAware
 from stable_baselines3.common.callbacks import CheckpointCallback
 
 # Logging
-# from policies.util.util import test_model
+from utils.model_test import test_model
 
 logger = setup_logging()
 
 parser = argparse.ArgumentParser(description="Run ILP!")
 parser.add_argument(
-    "--alg", default="ppo", help='The algorithm: ["ppo", "recurrent_ppo", "a2c"]'
+    "--alg", default="a2c", help='The algorithm: ["ppo", "recurrent_ppo", "a2c"]'
 )
 parser.add_argument("--k8s", default=True, action="store_true", help="K8s mode")
 parser.add_argument(
@@ -142,6 +142,7 @@ def main():
 
     if training:
         if loading:  # resume training
+            logger.info("Loading model from: " + load_path)
             model = get_load_model(alg, tensorboard_log, load_path)
             model.set_env(env)
             model.learn(
@@ -161,14 +162,14 @@ def main():
 
     if testing:
         model = get_load_model(alg, tensorboard_log, test_path)
-        # test_model(
-        #     model,
-        #     env,
-        #     n_episodes=100,
-        #     n_steps=110,
-        #     smoothing_window=5,
-        #     fig_name=name + "_test_reward.png",
-        # )
+        test_model(
+            model,
+            env,
+            n_episodes=100,
+            n_steps=110,
+            smoothing_window=5,
+            fig_name=name + "_test_reward.png",
+        )
 
 
 if __name__ == "__main__":

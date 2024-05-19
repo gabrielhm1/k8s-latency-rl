@@ -20,7 +20,7 @@ def create_state_space(k8s_metrics, prom_metrics, service_name):
         "paymentservice",
         "currencyservice",
     ]
-    nodes = ["worker-1", "worker-2", "worker-3"]
+    nodes = ["worker1", "worker2", "worker3"]
     state_space = []
     for app in app_services:
         pod_nodes = k8s_metrics.get(app, None)

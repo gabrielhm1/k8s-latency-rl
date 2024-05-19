@@ -95,7 +95,7 @@ def schedule_pod(pod_name, node, namespace="onlineboutique"):
             _preload_content=False,
         )
     except Exception as e:
-        logger.error("Pod {pod_name} failed to bind to Node {node} due to {e}")
+        logger.error(f"Pod {pod_name} failed to bind to Node {node} due to {e}")
 
 
 def get_pod_node_list(v1_client, namespace, label_selector):
@@ -119,7 +119,7 @@ def get_pod_info(pod_name, app_name, namespace="default"):
     # logger.info(f"Pod Name: {pod_name}, App Name: {app_name}")
     logger.info("Collecting neighbor of %s", app_name)
     neighbor_app = prometheus_metrics.create_graph(app_name, namespace)
-    logger.info(f"Neighbor: {neighbor_app}")
+    logger.debug(f"Neighbor: {neighbor_app}")
     app_string = app_name
     for app in neighbor_app["destination"]:
         app_string += "," + app
@@ -140,7 +140,7 @@ def get_pod_info(pod_name, app_name, namespace="default"):
 def scheduler_watcher(namespace, pod_scheduled=[]):
     V1_CLIENT = CoreV1Api()
     while True:
-        logger.info("Checking for pod events....")
+        logger.debug("Checking for pod events....")
         try:
             watcher = watch.Watch()
             for event in watcher.stream(
@@ -170,6 +170,7 @@ def scheduler_watcher(namespace, pod_scheduled=[]):
             logger.error("Error in watcher: %s", e)
         finally:
             del watcher
+    return {}
 
 
 def main():

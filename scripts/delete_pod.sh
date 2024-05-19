@@ -1,11 +1,12 @@
-
-
+MIN_PODS=10
 index=0
+
+
 while [ true ]; do
     for i in {1..10}; do
         # Store the result of the kubectl command in a variable
         array_size=0
-        while [ "$array_size" -lt 7 ]; do
+        while [ "$array_size" -lt $MIN_PODS ]; do
             result=$(kubectl get pod -n learning -l project=latency-network -o jsonpath='{.items[*].metadata.name}' --field-selector=status.phase='Running')
 
             # Split the result into an array using newline as the delimiter
@@ -22,7 +23,7 @@ while [ true ]; do
 
             # Select a random pod name from the array
             selected_pod="${pod_names[random_index]}"
-            sleep 3
+            sleep 7
 
             # Delete the selected pod
             echo "Deleting pod: $selected_pod"
@@ -31,5 +32,5 @@ while [ true ]; do
             echo "No pods found in the array."
         fi
     done
-    sleep 60
+    sleep 65
 done

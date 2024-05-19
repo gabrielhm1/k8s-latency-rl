@@ -3,7 +3,7 @@ from logging import getLogger
 
 logger = getLogger("model_logger")
 
-URL = "http://localhost:9090"
+URL = "http://193.190.127.206:30667"
 
 
 def run_prometheus_query(query):
@@ -138,11 +138,11 @@ def get_metrics(app_graph, service_name, namespace):
 
 def get_application_latency(namespace):
     latency_query = (
-        'round(sum(increase(istio_request_duration_milliseconds_sum{reporter="source", source_app="loadgenerator", destination_app="frontend", namespace="'
+        'round(sum(increase(istio_request_duration_milliseconds_sum{reporter="source", source_app="locust", destination_app="frontend", destination_workload_namespace="'
         + namespace
-        + '"}[5m])) by (source_app, destination_app) / sum(increase(istio_request_duration_milliseconds_count{reporter="source", source_app="loadgenerator", destination_app="frontend", namespace="'
+        + '"}[1m])) by (source_app,le) / sum(increase(istio_request_duration_milliseconds_count{reporter="source", source_app="locust", destination_app="frontend", destination_workload_namespace="'
         + namespace
-        + '"}[5m])) by (source_app, destination_app))'
+        + '"}[1m])) by (source_app,le))'
     )
     response = run_prometheus_query(latency_query)
     try:
