@@ -47,7 +47,7 @@ def change_user():
         for x in range(0, 9):
             print(x)
             try:
-                spawn_rate = 0.5
+                spawn_rate = 1
                 if x == 0:
                     current_user = MIN_USERS
                     waiting_period = 50
@@ -57,7 +57,7 @@ def change_user():
                     if user_up > MAX_USERS:
                         user_up = MAX_USERS
                     current_user = user_up
-                    waiting_period = 120
+                    waiting_period = 90
                 payload = {
                     "user_count": current_user,
                     "spawn_rate": spawn_rate,

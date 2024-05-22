@@ -65,73 +65,53 @@ def get_metrics(app_graph, service_name, namespace):
     }
 
     for app in app_graph["destination"]:
-        app_metrics[app] = {}
-        for k, v in destination_metrics.items():
-            # 50 percentile
-            # metric = (
-            #     '(histogram_quantile(0.50, sum(irate(%s{reporter=~"source", destination_service_name=~"%s", source_app=~"%s"}[5m])) by (source_app, destination_service_name, le))) '
-            #     % (v, app, service_name)
-            # )
+        app_metrics[app] = 0
+        # 50 percentile
+        # metric = (
+        #     '(histogram_quantile(0.50, sum(irate(%s{reporter=~"source", destination_service_name=~"%s", source_app=~"%s"}[1m])) by (source_app, destination_service_name, le))) '
+        #     % (v, app, service_name)
+        # )
 
-            # avg
-            metric = (
-                'round(sum(increase(%s{namespace="%s", reporter=~"source", destination_service_name=~"%s", source_app=~"%s"}[5m])) by (source_app, destination_service_name) / sum (increase(%s{namespace="%s", reporter=~"source", destination_service_name=~"%s", source_app=~"%s"}[5m])) by (source_app, destination_service_name))'
-                % (
-                    v[0],
-                    namespace,
-                    app,
-                    service_name,
-                    v[1],
-                    namespace,
-                    app,
-                    service_name,
-                )
+        # avg
+        metric = (
+            'sum by(source_app,destination_app) (round(increase(istio_requests_total{source_app="%s",destination_app="%s"}[1m])))'
+            % (
+                service_name,
+                app,
             )
+        )
 
-            query_response = run_prometheus_query(metric)
+        query_response = run_prometheus_query(metric)
 
-            try:
-                app_metrics[app][k] = (
-                    int(query_response[0].get("value", 0)[1]) if query_response else 0
-                )
-            except Exception as e:
-                app_metrics[app][k] = 0
-                logger.error(f"Error: {e} to set metrics {k} for {app}")
+        try:
+            app_metrics[app] = (
+                int(query_response[0].get("value", 0)[1]) if query_response else 0
+            )
+        except Exception as e:
+            app_metrics[app] = 0
+            logger.error(f"Error: {e} to set metrics for {app}")
 
     for app in app_graph["source"]:
-        for k, v in destination_metrics.items():
-            # 50 percentile
-            # metric = (
-            #     '(histogram_quantile(0.50, sum(irate(%s{reporter=~"source", destination_service_name=~"%s", source_app=~"%s"}[5m])) by (source_app, destination_service_name, le))) '
-            #     % (v, service_name, app)
-            # )
-
-            # avg metric
-            metric = (
-                'round(sum(increase(%s{namespace="%s", reporter=~"source", destination_service_name=~"%s", source_app=~"%s"}[5m])) by (source_app, destination_service_name) / sum(increase(%s{namespace="%s", reporter=~"source", destination_service_name=~"%s", source_app=~"%s"}[5m])) by (source_app, destination_service_name))'
-                % (
-                    v[0],
-                    namespace,
-                    service_name,
-                    app,
-                    v[1],
-                    namespace,
-                    service_name,
-                    app,
-                )
+        metric = (
+            'sum by(source_app,destination_app) (round(increase(istio_requests_total{source_app="%s",destination_app="%s"}[1m])))'
+            % (
+                app,
+                service_name,
             )
-            query_response = run_prometheus_query(metric)
+        )
 
-            if app not in app_metrics:
-                app_metrics[app] = {}
+        query_response = run_prometheus_query(metric)
 
-            try:
-                app_metrics[app][k] = (
-                    int(query_response[0].get("value", 0)[1]) if query_response else 0
-                )
-            except Exception as e:
-                app_metrics[app][k] = 0
-                logger.error(f"Error: {e} to set metrics {k} for {app}")
+        if app not in app_metrics:
+            app_metrics[app] = {}
+
+        try:
+            app_metrics[app] = (
+                int(query_response[0].get("value", 0)[1]) if query_response else 0
+            )
+        except Exception as e:
+            app_metrics[app] = 0
+            logger.error(f"Error: {e} to set metrics for {app}")
 
     return app_metrics
 

@@ -13,6 +13,7 @@ from gym.utils import seeding
 from utils.kube_watcher import get_pod_info, scheduler_watcher, schedule_pod
 from utils.prometheus_metrics import get_application_latency
 from utils.save_csv import save_to_csv
+from utils.action_space import calculate_latency
 
 
 logger = getLogger("model_logger")
@@ -85,7 +86,7 @@ class LatencyAware(gym.Env):
         self.take_action(action)
 
         # Get reward
-        time.sleep(30)
+        # time.sleep(30)
         reward = self.get_reward(action)
         self.total_reward += reward
 
@@ -156,7 +157,6 @@ class LatencyAware(gym.Env):
         logger.debug("Action: %s", action)
         node_name = ACTIONS[action]
         schedule_pod(self.current_pod["pod_name"], node_name, self.namespace)
-        self.pod_scheduled.append(self.current_pod["pod_name"])
 
 
 
@@ -178,7 +178,8 @@ class LatencyAware(gym.Env):
         #         pod_spread = spread_difference
         # logger.debug("Pod Spread: %s", pod_spread)
 
-        reward = get_application_latency(self.namespace)
+        reward = calculate_latency(ob)
+        logger.debug("Reward: %s", reward)
         self.avg_latency += reward
         if reward >= 100:
             reward = 100
@@ -204,72 +205,63 @@ class LatencyAware(gym.Env):
             response = scheduler_watcher(self.namespace, self.pod_scheduled)
 
         self.current_pod = response
+        self.pod_scheduled.append(self.current_pod["pod_name"])
 
     def get_observation_space(self):
         return spaces.Box(
-            low=np.zeros(60),
+            low=np.zeros(50),
             high=np.array(
                 [
                     1,  # Current Pod  -- 1) recommendationservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    500,  # Average Latency
-                    500,  # Average request size
+                    5000,  # Average request size
                     1,  # Current Pod -- 2) productcatalogservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    500,  # Average Latency
-                    500,  # Average request size
+                    5000,  # Average request size
                     1,  # Current Pod -- 3) cartservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    500,  # Average Latency
-                    500,  # Average request size
+                    5000,  # Average request size
                     1,  # Current Pod -- 4) adservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    500,  # Average Latency
-                    500,  # Average request size
+                    5000,  # Average request size
                     1,  # Current Pod -- 5) paymentservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    500,  # Average Latency
-                    500,  # Average request size
+                    5000,  # Average request size
                     1,  # Current Pod -- 6) shippingservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    500,  # Average Latency
-                    500,  # Average request size
+                    5000,  # Average request size
                     1,  # Current Pod -- 7) currencyservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    500,  # Average Latency
-                    500,  # Average request size
+                    5000,  # Average request size
                     1,  # Current Pod -- 8) checkoutservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    500,  # Average Latency
-                    500,  # Average request size
+                    5000,  # Average request size
                     1,  # Current Pod -- 9) frontend
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    500,  # Average Latency
-                    500,  # Average request size
+                    5000,  # Average request size
                     1,  # Current Pod -- 10) emailservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    500,  # Average Latency
-                    500,  # Average request size
+                    5000,  # Average request size
                 ]
             ),
             dtype=np.int32,
