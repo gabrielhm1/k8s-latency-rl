@@ -16,3 +16,7 @@ def save_to_csv(file_name, episode, avg_latency, reward, execution_time):
                 "execution_time": float("{:.2f}".format(execution_time)),
             }
         )
+
+def save_space_state(data):
+    with open("data/k8s_state.csv", "a") as f:
+        f.write(",".join(map(str, data)) + "\n")

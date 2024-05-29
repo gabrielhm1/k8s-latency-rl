@@ -43,8 +43,10 @@ parser.add_argument(
     help="Testing path, ex: logs/model/test.zip",
 )
 
-parser.add_argument("--steps", default=100, help="The steps for saving.")
-parser.add_argument("--total_steps", default=5000, help="The total number of steps.")
+parser.add_argument("--name", default="test", help="The name of the test.")
+
+parser.add_argument("--steps", default=200, help="The steps for saving.")
+parser.add_argument("--total_steps", default=10000, help="The total number of steps.")
 
 args = parser.parse_args()
 
@@ -103,7 +105,7 @@ def main():
     alg = args.alg
     k8s = args.k8s
     goal = args.goal
-
+    test_name = args.name
     loading = args.loading
     load_path = args.load_path
     training = args.training
@@ -126,9 +128,7 @@ def main():
     name = (
         alg
         + "_env_"
-        + env.name
-        + "_goal_"
-        + goal
+        + test_name
         + "_k8s_"
         + str(k8s)
         + "_totalSteps_"

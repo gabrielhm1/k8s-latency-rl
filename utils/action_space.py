@@ -1,13 +1,5 @@
-# self.Pods? 1 : 0 - 1, # Esse pod esta sendo alocado?
-# qtd_replicas,  # Number of Pods  -- 1) recommendationservice - alocando
-# 1,  # qtd na maquina 1
-# 3,  # qtd na maquina 2
-# 0,  # qtd na maquina 3
-# 0,  # media da latencia
-# 0,  # media bytes trocados
 
-
-def create_state_space(k8s_metrics, prom_metrics, service_name):
+def create_state_space(k8s_metrics, prom_metrics, service_name,node_list):
     app_services = [
         "frontend",
         "recommendationservice",
@@ -46,10 +38,11 @@ def create_state_space(k8s_metrics, prom_metrics, service_name):
             )
         else:
             state_space.extend([0, 0, 0, 0, 0])
+    state_space.extend([v for v in node_list.values()])
     return state_space
 
 def calculate_latency(ob):
-    worker_latency = [4,5,7]
+    worker_latency = [5,4,7]
     app_services = [
         "frontend",
         "recommendationservice",

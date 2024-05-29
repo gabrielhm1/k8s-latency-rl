@@ -12,7 +12,7 @@ from gym.utils import seeding
 
 from utils.kube_watcher import get_pod_info, scheduler_watcher, schedule_pod
 from utils.prometheus_metrics import get_application_latency
-from utils.save_csv import save_to_csv
+from utils.save_csv import save_to_csv,save_space_state
 from utils.action_space import calculate_latency
 
 
@@ -143,7 +143,10 @@ class LatencyAware(gym.Env):
         self.episode_over = False
         self.total_reward = 0
         self.avg_latency = 0
-        self.pod_scheduled = []
+        if self.pod_scheduled:
+            self.pod_scheduled = self.pod_scheduled[-5:]
+        else:
+            self.pod_scheduled = []
         self.watch_scheduling_queue()
 
         return np.array(self.get_state())
@@ -157,6 +160,7 @@ class LatencyAware(gym.Env):
         logger.debug("Action: %s", action)
         node_name = ACTIONS[action]
         schedule_pod(self.current_pod["pod_name"], node_name, self.namespace)
+        self.pod_scheduled.append(self.current_pod["pod_name"])
 
 
 
@@ -166,7 +170,6 @@ class LatencyAware(gym.Env):
         logger.debug("Calculating Reward")
 
         ob = self.get_state()
-
         # init_index = app_item * 6
         # node_list = ob[init_index + 1 : init_index + 4]
         # selected_node = node_list[action]
@@ -177,17 +180,23 @@ class LatencyAware(gym.Env):
         #     if spread_difference > pod_spread:
         #         pod_spread = spread_difference
         # logger.debug("Pod Spread: %s", pod_spread)
-
-        reward = calculate_latency(ob)
+        
+        pod_in_node = ob[-3:]
+        logger.debug("Pod in Node: %s", pod_in_node)
+        if pod_in_node[action] > 15:
+            ob.append(-50)
+            save_space_state(ob)
+            self.avg_latency += 50
+            return -50
+        
+        reward = 2.0 * calculate_latency(ob)
         logger.debug("Reward: %s", reward)
+
         self.avg_latency += reward
         if reward >= 100:
             reward = 100
-        
-        ob.append(reward)
-        with open("data/k8s_state.csv", "a") as f:
-            f.write(",".join(map(str, ob)) + "\n")
-
+        ob.append(-reward)
+        save_space_state(ob)
 
         return -reward
 
@@ -205,63 +214,65 @@ class LatencyAware(gym.Env):
             response = scheduler_watcher(self.namespace, self.pod_scheduled)
 
         self.current_pod = response
-        self.pod_scheduled.append(self.current_pod["pod_name"])
 
     def get_observation_space(self):
         return spaces.Box(
-            low=np.zeros(50),
+            low=np.zeros(53),
             high=np.array(
                 [
-                    1,  # Current Pod  -- 1) recommendationservice
+                    1,  # Current Pod  -- 1 recommendationservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request size
+                    5000,  # Average request 1 before
                     1,  # Current Pod -- 2) productcatalogservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request size
+                    5000,  # Average request 1 before
                     1,  # Current Pod -- 3) cartservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request size
+                    5000,  # Sum request 1 before
                     1,  # Current Pod -- 4) adservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request size
+                    5000,  # Sum request 1 before
                     1,  # Current Pod -- 5) paymentservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request size
+                    5000,  # Sum request 1 before
                     1,  # Current Pod -- 6) shippingservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request size
+                    5000,  # Sum request 1 before
                     1,  # Current Pod -- 7) currencyservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request size
+                    5000,  # Sum request 1 before
                     1,  # Current Pod -- 8) checkoutservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request size
+                    5000,  # Sum request 1 before
                     1,  # Current Pod -- 9) frontend
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request size
+                    5000,  # Sum request 1 before
                     1,  # Current Pod -- 10) emailservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request size
+                    5000,  # Sum request 1 before
+                    40,  # Worker-1
+                    40,  # Worker-2
+                    40  # Worker-3
                 ]
             ),
             dtype=np.int32,

@@ -113,6 +113,24 @@ def get_pod_node_list(v1_client, namespace, label_selector):
             response[pod.metadata.labels["app"]].append(pod.spec.node_name)
     return response
 
+def get_worker_status(v1_client, namespace, ):
+    pods_reponse = v1_client.list_namespaced_pod(
+        namespace
+    )
+    workers = {
+        "worker1": 0,
+        "worker2": 0,
+        "worker3": 0,
+    }
+    for pod in pods_reponse.items:
+        if pod.metadata.labels.get("app", None) is None:
+            logger.error(f"Pod {pod.metadata.name} has no app label")
+        try:
+            workers[pod.spec.node_name] += 1
+        except:
+            pass
+    return workers
+
 
 def get_pod_info(pod_name, app_name, namespace="default"):
     V1_CLIENT = CoreV1Api()
@@ -130,9 +148,9 @@ def get_pod_info(pod_name, app_name, namespace="default"):
 
     logger.info(f"Getting Nodes")
     current_neighbor = get_pod_node_list(V1_CLIENT, namespace, neighbor_labels)
-
+    pods_by_node = get_worker_status(V1_CLIENT, namespace)
     logger.info(f"Creating State Space")
-    state_space = create_state_space(current_neighbor, prom_metrics, app_name)
+    state_space = create_state_space(current_neighbor, prom_metrics, app_name, pods_by_node)
 
     return state_space
 
