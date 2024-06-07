@@ -39,7 +39,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      # schedulerName: latency-aware
+      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -68,7 +68,7 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 100Mi
+              memory: 150Mi
             limits:
               cpu: 500m
               memory: 200Mi
@@ -140,7 +140,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      # schedulerName: latency-aware
+      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -177,7 +177,7 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 100Mi
+              memory: 150Mi
             limits:
               cpu: 500m
               memory: 200Mi
@@ -250,7 +250,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      # schedulerName: latency-aware
+      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -356,7 +356,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      # schedulerName: latency-aware
+      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -488,7 +488,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      # schedulerName: latency-aware
+      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -515,7 +515,7 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 100Mi
+              memory: 150Mi
             limits:
               cpu: 500m
               memory: 200Mi
@@ -588,7 +588,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      # schedulerName: latency-aware
+      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -615,7 +615,7 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 100Mi
+              memory: 150Mi
             limits:
               cpu: 500m
               memory: 200Mi
@@ -688,7 +688,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      # schedulerName: latency-aware
+      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -707,7 +707,7 @@ spec:
           resources:
             requests:
               cpu: 500m
-              memory: 100Mi
+              memory: 150Mi
             limits:
               cpu: 500m
               memory: 200Mi
@@ -767,77 +767,7 @@ spec:
     - name: grpc
       port: 7070
       targetPort: 7070
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: loadgenerator
-spec:
-  selector:
-    matchLabels:
-      app: loadgenerator
-  replicas: 0
-  template:
-    metadata:
-      labels:
-        # project: latency-network
-        app: loadgenerator
-      annotations:
-        sidecar.istio.io/rewriteAppHTTPProbers: "true"
-    spec:
-      serviceAccountName: default
-      terminationGracePeriodSeconds: 5
-      restartPolicy: Always
-      securityContext:
-        fsGroup: 1000
-        runAsGroup: 1000
-        runAsNonRoot: true
-        runAsUser: 1000
-      initContainers:
-        - command:
-            - /bin/sh
-            - -exc
-            - |
-              echo "Init container pinging frontend: ${FRONTEND_ADDR}..."
-              STATUSCODE=$(wget --server-response http://${FRONTEND_ADDR} 2>&1 | awk '/^  HTTP/{print $2}')
-              if test $STATUSCODE -ne 200; then
-                  echo "Error: Could not reach frontend - Status code: ${STATUSCODE}"
-                  exit 1
-              fi
-          name: frontend-check
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            privileged: false
-            readOnlyRootFilesystem: true
-          image: busybox:latest
-          env:
-            - name: FRONTEND_ADDR
-              value: "frontend:80"
-      containers:
-        - name: main
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            privileged: false
-            readOnlyRootFilesystem: true
-          image: gcr.io/google-samples/microservices-demo/loadgenerator:v0.8.0
-          env:
-            - name: FRONTEND_ADDR
-              value: "frontend:80"
-            - name: USERS
-              value: "25"
-          resources:
-            requests:
-              cpu: 300m
-              memory: 256Mi
-            limits:
-              cpu: 600m
-              memory: 512Mi
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -860,7 +790,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      # schedulerName: latency-aware
+      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -888,7 +818,7 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 120Mi
+              memory: 150Mi
             limits:
               cpu: 500m
               memory: 200Mi
@@ -960,7 +890,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      # schedulerName: latency-aware
+      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -988,7 +918,7 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 100Mi
+              memory: 150Mi
             limits:
               cpu: 500m
               memory: 200Mi
@@ -1127,7 +1057,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      # schedulerName: latency-aware
+      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:

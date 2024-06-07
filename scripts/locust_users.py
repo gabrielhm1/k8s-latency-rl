@@ -50,7 +50,7 @@ def change_user():
                 spawn_rate = 1
                 if x == 0:
                     current_user = MIN_USERS
-                    waiting_period = 50
+                    waiting_period = 120
                     spawn_rate = 100
                 if x >= 1:
                     user_up += 50

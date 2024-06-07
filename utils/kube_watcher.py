@@ -104,13 +104,14 @@ def get_pod_node_list(v1_client, namespace, label_selector):
         namespace, label_selector=label_selector
     )
     for pod in pods_reponse.items:
-        if pod.metadata.labels.get("app", None) is None:
-            print(f"Pod {pod.metadata.name} has no app label")
-            continue
-        if pod.metadata.labels["app"] not in response:
-            response[pod.metadata.labels["app"]] = [pod.spec.node_name]
-        else:
-            response[pod.metadata.labels["app"]].append(pod.spec.node_name)
+        if pod.status.phase != "Terminating":
+            if pod.metadata.labels.get("app", None) is None:
+                print(f"Pod {pod.metadata.name} has no app label")
+                continue
+            if pod.metadata.labels["app"] not in response:
+                response[pod.metadata.labels["app"]] = [pod.spec.node_name]
+            else:
+                response[pod.metadata.labels["app"]].append(pod.spec.node_name)
     return response
 
 def get_worker_status(v1_client, namespace, ):
