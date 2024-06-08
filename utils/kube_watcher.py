@@ -7,6 +7,7 @@ from kubernetes import config, watch
 from kubernetes.client import (
     ApiClient,
     CoreV1Api,
+    AppsV1Api,
     V1ObjectReference,
     V1ObjectMeta,
     V1Binding,
@@ -21,7 +22,8 @@ from logging import getLogger
 
 logger = getLogger("model_logger")
 
-V1_CLIENT = None  # type: CoreV1Api
+# V1_CLIENT = None  # type: CoreV1Api
+V1_CLIENT = CoreV1Api()
 SCHEDULE_STRATEGY = "project=latency-network"
 _NOSCHEDULE_TAINT = "NoSchedule"
 config.load_kube_config()
@@ -189,8 +191,32 @@ def scheduler_watcher(namespace, pod_scheduled=[]):
             logger.error("Error in watcher: %s", e)
         finally:
             del watcher
-    return {}
 
+def patch_deployment(namespace):
+    app_services = [
+        "frontend",
+        "recommendationservice",
+        "cartservice",
+        "productcatalogservice",
+        "adservice",
+        "shippingservice",
+        "checkoutservice",
+        "emailservice",
+        "paymentservice",
+        "currencyservice",
+    ]
+    v1_apps = AppsV1Api()
+    logger.debug(f"Scaling deployment to 1")
+    for app in app_services:
+        deployment_object = v1_apps.read_namespaced_deployment(name=app, namespace=namespace)
+        deployment_object.spec.replicas = 1
+        
+        try:
+            v1_apps.patch_namespaced_deployment(
+                name=app, namespace=namespace, body=deployment_object
+            )
+        except Exception as e:
+            logger.error(f"Error: {e} to patch deployment for {app}")
 
 def main():
     logger.info("Initializing the meetup scheduler...")

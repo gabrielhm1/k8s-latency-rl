@@ -1,4 +1,4 @@
-MIN_PODS=10
+MIN_PODS=16
 index=0
 
 
@@ -14,7 +14,7 @@ while [ true ]; do
 
             # Check the size of the array
             array_size=${#pod_names[@]}
-            sleep 3
+            sleep 60
         done
         # Check if the array is not empty
         if [ "$array_size" -gt 0 ]; then
@@ -23,7 +23,6 @@ while [ true ]; do
 
             # Select a random pod name from the array
             selected_pod="${pod_names[random_index]}"
-            sleep 7
 
             # Delete the selected pod
             echo "Deleting pod: $selected_pod"
@@ -32,5 +31,5 @@ while [ true ]; do
             echo "No pods found in the array."
         fi
     done
-    sleep 65
+    sleep 60
 done

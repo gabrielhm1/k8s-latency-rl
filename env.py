@@ -10,7 +10,7 @@ import numpy as np
 from gym import spaces
 from gym.utils import seeding
 
-from utils.kube_watcher import get_pod_info, scheduler_watcher, schedule_pod
+from utils.kube_watcher import get_pod_info, scheduler_watcher, schedule_pod, patch_deployment
 from utils.prometheus_metrics import get_application_latency
 from utils.save_csv import save_to_csv,save_space_state
 from utils.action_space import calculate_latency
@@ -20,7 +20,7 @@ logger = getLogger("model_logger")
 # Action Moves
 ACTIONS = ["worker1", "worker2", "worker3"]
 NACTIONS = 3
-MAX_STEPS = 10
+MAX_STEPS = 8
 MAX_SPREAD = 4
 
 APPS = [
@@ -41,7 +41,7 @@ class LatencyAware(gym.Env):
 
     metadata = {"render.modes": ["human", "ansi", "array"]}
 
-    def __init__(self, waiting_period=0.3, namespace="default"):
+    def __init__(self, waiting_period=0.3, namespace="default", mode= "train"):
         # Define action and observation space
         # They must be gym.spaces objects
 
@@ -50,6 +50,7 @@ class LatencyAware(gym.Env):
         self.name = "online_boutique_gym"
         self.__version__ = "0.0.1"
         self.seed()
+        self.mode = mode
         self.namespace = namespace
         self.current_pod = {}
         self.pod_scheduled = []
@@ -117,13 +118,17 @@ class LatencyAware(gym.Env):
             save_to_csv(
                 self.file_results,
                 self.episode_count,
-                self.avg_latency/10,
+                self.avg_latency/MAX_STEPS,
                 self.total_reward,
                 self.execution_time,
             )
+            ob = np.zeros(53)
+            time.sleep(20)
+        else:
+            self.watch_scheduling_queue()
+            ob = self.get_state()
 
-        self.watch_scheduling_queue()
-        ob = self.get_state()
+
 
         # return ob, reward, self.episode_over, self.info
         return np.array(ob), reward, self.episode_over, self.info
@@ -147,8 +152,11 @@ class LatencyAware(gym.Env):
             self.pod_scheduled = self.pod_scheduled[-5:]
         else:
             self.pod_scheduled = []
-        self.watch_scheduling_queue()
 
+        if self.mode == "train":
+            patch_deployment(self.namespace)
+            time.sleep(5)
+        self.watch_scheduling_queue()
         return np.array(self.get_state())
 
     def render(self, mode="human", close=False):
@@ -157,6 +165,10 @@ class LatencyAware(gym.Env):
 
     def take_action(self, action):
         self.current_step += 1
+        # if self.current_step == MAX_STEPS:
+        #     # logging.info('[Take Action] MAX STEPS achieved, ending ...')
+        #     self.episode_over = True
+
         logger.debug("Action: %s", action)
         node_name = ACTIONS[action]
         schedule_pod(self.current_pod["pod_name"], node_name, self.namespace)
@@ -183,7 +195,7 @@ class LatencyAware(gym.Env):
         
         pod_in_node = ob[-3:]
         logger.debug("Pod in Node: %s", pod_in_node)
-        if pod_in_node[action] > 15:
+        if pod_in_node[action] > 10:
             ob.append(-50)
             save_space_state(ob)
             self.avg_latency += 50
@@ -224,52 +236,52 @@ class LatencyAware(gym.Env):
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request 1 before
+                    20000,  # Average request 1 before
                     1,  # Current Pod -- 2) productcatalogservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Average request 1 before
+                    20000,  # Average request 1 before
                     1,  # Current Pod -- 3) cartservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Sum request 1 before
+                    20000,  # Sum request 1 before
                     1,  # Current Pod -- 4) adservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Sum request 1 before
+                    20000,  # Sum request 1 before
                     1,  # Current Pod -- 5) paymentservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Sum request 1 before
+                    20000,  # Sum request 1 before
                     1,  # Current Pod -- 6) shippingservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Sum request 1 before
+                    20000,  # Sum request 1 before
                     1,  # Current Pod -- 7) currencyservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Sum request 1 before
+                    20000,  # Sum request 1 before
                     1,  # Current Pod -- 8) checkoutservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Sum request 1 before
+                    20000,  # Sum request 1 before
                     1,  # Current Pod -- 9) frontend
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Sum request 1 before
+                    20000,  # Sum request 1 before
                     1,  # Current Pod -- 10) emailservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    5000,  # Sum request 1 before
+                    20000,  # Sum request 1 before
                     40,  # Worker-1
                     40,  # Worker-2
                     40  # Worker-3
