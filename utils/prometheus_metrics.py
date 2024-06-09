@@ -21,7 +21,7 @@ def create_graph(service_name, namespace="onlineboutique"):
     source_query = (
         'sum(istio_requests_total{namespace="'
         + namespace
-        + '", reporter="source", destination_service_name="'
+        + '", reporter="source", destination_app="'
         + service_name
         + '"}) by (source_app, destination_app)'
     )
@@ -68,7 +68,7 @@ def get_metrics(app_graph, service_name, namespace):
         app_metrics[app] = 0
         # 50 percentile
         # metric = (
-        #     '(histogram_quantile(0.50, sum(irate(%s{reporter=~"source", destination_service_name=~"%s", source_app=~"%s"}[1m])) by (source_app, destination_service_name, le))) '
+        #     '(histogram_quantile(0.50, sum(irate(%s{reporter=~"source", destination_app=~"%s", source_app=~"%s"}[1m])) by (source_app, destination_app, le))) '
         #     % (v, app, service_name)
         # )
 

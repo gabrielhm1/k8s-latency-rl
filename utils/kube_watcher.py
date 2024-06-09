@@ -157,6 +157,29 @@ def get_pod_info(pod_name, app_name, namespace="default"):
 
     return state_space
 
+def get_pod_info_offline(app_name,offline_env, namespace="default"):
+    V1_CLIENT = CoreV1Api()
+    # logger.info(f"Pod Name: {pod_name}, App Name: {app_name}")
+    logger.info("Collecting neighbor of %s", app_name)
+    neighbor_app = prometheus_metrics.create_graph(app_name, namespace)
+    logger.debug(f"Neighbor: {neighbor_app}")
+    
+    app_list = [app_name]
+    for app in neighbor_app["destination"]:
+        app_list.append(app)
+    for app in neighbor_app["source"]:
+        app_list.append(app)
+    prom_metrics = prometheus_metrics.get_metrics(neighbor_app, app_name, namespace)
+
+
+
+    logger.info(f"Getting Nodes")
+    current_neighbor = offline_env.get_apps_node(app_list)
+    logger.info(f"Creating State Space")
+    state_space = create_state_space(current_neighbor, prom_metrics, app_name, offline_env.get_nodes())
+
+    return state_space
+
 
 def scheduler_watcher(namespace, pod_scheduled=[]):
     V1_CLIENT = CoreV1Api()

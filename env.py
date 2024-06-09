@@ -10,17 +10,18 @@ import numpy as np
 from gym import spaces
 from gym.utils import seeding
 
-from utils.kube_watcher import get_pod_info, scheduler_watcher, schedule_pod, patch_deployment
+from utils.kube_watcher import get_pod_info,get_pod_info_offline, scheduler_watcher, schedule_pod, patch_deployment
 from utils.prometheus_metrics import get_application_latency
 from utils.save_csv import save_to_csv,save_space_state
 from utils.action_space import calculate_latency
-
+from utils.offline_env import OfflineEnv
 
 logger = getLogger("model_logger")
 # Action Moves
 ACTIONS = ["worker1", "worker2", "worker3"]
 NACTIONS = 3
-MAX_STEPS = 8
+MAX_STEPS = 20
+MAX_PODS = 15
 MAX_SPREAD = 4
 
 APPS = [
@@ -41,7 +42,7 @@ class LatencyAware(gym.Env):
 
     metadata = {"render.modes": ["human", "ansi", "array"]}
 
-    def __init__(self, waiting_period=0.3, namespace="default", mode= "train"):
+    def __init__(self, waiting_period=0.3, namespace="default", mode= "train", type="offline"):
         # Define action and observation space
         # They must be gym.spaces objects
 
@@ -50,11 +51,13 @@ class LatencyAware(gym.Env):
         self.name = "online_boutique_gym"
         self.__version__ = "0.0.1"
         self.seed()
+        self.type = type
         self.mode = mode
         self.namespace = namespace
         self.current_pod = {}
         self.pod_scheduled = []
         self.waiting_period = waiting_period  # seconds to wait after action
+        self.offline_env = OfflineEnv()
 
         # Current Step
         self.current_step = 0
@@ -153,10 +156,18 @@ class LatencyAware(gym.Env):
         else:
             self.pod_scheduled = []
 
-        if self.mode == "train":
-            patch_deployment(self.namespace)
+
+        if self.type == "online":
+            if self.mode == "train":
+                patch_deployment(self.namespace)
+                time.sleep(5)
+            self.watch_scheduling_queue()
+        else:
+            for app in APPS:
+                self.offline_env.scale(app, 1)
             time.sleep(5)
-        self.watch_scheduling_queue()
+            self.current_pod = self.offline_env.allocate_pod()
+
         return np.array(self.get_state())
 
     def render(self, mode="human", close=False):
@@ -171,7 +182,10 @@ class LatencyAware(gym.Env):
 
         logger.debug("Action: %s", action)
         node_name = ACTIONS[action]
-        schedule_pod(self.current_pod["pod_name"], node_name, self.namespace)
+        if self.type == "online":
+            schedule_pod(self.current_pod["pod_name"], node_name, self.namespace)
+        else:
+            self.offline_env.add_pod(self.current_pod["app_name"], action)
         self.pod_scheduled.append(self.current_pod["pod_name"])
 
 
@@ -195,7 +209,7 @@ class LatencyAware(gym.Env):
         
         pod_in_node = ob[-3:]
         logger.debug("Pod in Node: %s", pod_in_node)
-        if pod_in_node[action] > 10:
+        if pod_in_node[action] > MAX_PODS:
             ob.append(-50)
             save_space_state(ob)
             self.avg_latency += 50
@@ -213,17 +227,24 @@ class LatencyAware(gym.Env):
         return -reward
 
     def get_state(self):
-
-        ob = get_pod_info(
-            self.current_pod["pod_name"], self.current_pod["app_name"], self.namespace
-        )
+        if self.type == "online":
+            ob = get_pod_info(
+                self.current_pod["pod_name"], self.current_pod["app_name"], self.namespace
+            )
+        else:
+            ob = get_pod_info_offline(
+                self.current_pod["app_name"], self.offline_env, self.namespace
+            )
 
         return ob
 
     def watch_scheduling_queue(self):
         response = {}
-        while response.get("pod_name","") in self.pod_scheduled or not response:
-            response = scheduler_watcher(self.namespace, self.pod_scheduled)
+        if self.type == "online":
+            while response.get("pod_name","") in self.pod_scheduled or not response:
+                response = scheduler_watcher(self.namespace, self.pod_scheduled)
+        else:
+            response = self.offline_env.allocate_pod()
 
         self.current_pod = response
 

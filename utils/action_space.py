@@ -67,10 +67,10 @@ def calculate_latency(ob):
     currently_app = service_index * 5
     currently_node_list = ob[currently_app + 1 : currently_app + 4]
     total_sum = 0
-    weight = 0
+    total_weight = 0
     for app in app_services:
         parcial_sum = 0
-        weight = 0
+        parcial_weight = 0
         if app == app_services[service_index]:
             continue
         app_index = app_services.index(app)
@@ -86,7 +86,9 @@ def calculate_latency(ob):
                     else:
                         latency_weight = worker_latency[i] + worker_latency[j]                        
                     parcial_sum += currently_node_list[i] * neighbor_node_list[j] * latency_weight
-                    weight += currently_node_list[i] * neighbor_node_list[j]
-        mean_latency += (parcial_sum * ob[(app_index * 5) + 4]) / weight if weight > 0 else 0
-    mean_latency = mean_latency / total_requests if total_requests > 0 else 0
+                    parcial_weight += currently_node_list[i] * neighbor_node_list[j]
+        total_sum += (parcial_sum * ob[(app_index * 5) + 4])
+        total_weight += parcial_weight * ob[(app_index * 5) + 4]
+
+    mean_latency = total_sum / total_weight if total_weight > 0 else 0
     return mean_latency
