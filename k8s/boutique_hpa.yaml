@@ -39,7 +39,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
+      # schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -140,7 +140,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
+      # schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -250,7 +250,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
+      # schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -260,7 +260,7 @@ spec:
                 - ALL
             privileged: false
             readOnlyRootFilesystem: true
-          image: gcr.io/google-samples/microservices-demo/recommendationservice:v0.8.0
+          image: gcr.io/google-samples/microservices-demo/recommendationservice:v0.9.0
           ports:
             - containerPort: 8080
           readinessProbe:
@@ -356,7 +356,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
+      # schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -488,7 +488,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
+      # schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -588,7 +588,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
+      # schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -688,7 +688,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
+      # schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -790,7 +790,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
+      # schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -890,7 +890,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
+      # schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -1057,7 +1057,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
+      # schedulerName: latency-aware
       containers:
         - name: server
           securityContext:

@@ -46,7 +46,7 @@ parser.add_argument(
 parser.add_argument("--name", default="test", help="The name of the test.")
 
 parser.add_argument("--steps", default=200, help="The steps for saving.")
-parser.add_argument("--total_steps", default=10000, help="The total number of steps.")
+parser.add_argument("--total_steps", default=100000, help="The total number of steps.")
 
 args = parser.parse_args()
 

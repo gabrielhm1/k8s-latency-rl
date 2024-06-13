@@ -126,7 +126,6 @@ class LatencyAware(gym.Env):
                 self.execution_time,
             )
             ob = np.zeros(53)
-            time.sleep(20)
         else:
             self.watch_scheduling_queue()
             ob = self.get_state()
@@ -257,52 +256,52 @@ class LatencyAware(gym.Env):
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Average request 1 before
+                    50000,  # Average request 1 before
                     1,  # Current Pod -- 2) productcatalogservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Average request 1 before
+                    50000,  # Average request 1 before
                     1,  # Current Pod -- 3) cartservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 1 before
                     1,  # Current Pod -- 4) adservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 1 before
                     1,  # Current Pod -- 5) paymentservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 1 before
                     1,  # Current Pod -- 6) shippingservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 1 before
                     1,  # Current Pod -- 7) currencyservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 1 before
                     1,  # Current Pod -- 8) checkoutservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 1 before
                     1,  # Current Pod -- 9) frontend
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 1 before
                     1,  # Current Pod -- 10) emailservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 1 before
                     40,  # Worker-1
                     40,  # Worker-2
                     40  # Worker-3
