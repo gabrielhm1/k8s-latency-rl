@@ -73,7 +73,7 @@ class OfflineEnv():
                     else:
                         apps_nodes[app].extend([self.workers[i]]*node_count)
         return apps_nodes
-    def allocate_pod(self):
+    def scheduler_watcher(self):
         pod = random.choice(APPS)
         response = {
                             "pod_name": f"{pod}-pod-{random.randint(1, 1000)}",

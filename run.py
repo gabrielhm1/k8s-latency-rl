@@ -18,10 +18,7 @@ parser = argparse.ArgumentParser(description="Run ILP!")
 parser.add_argument(
     "--alg", default="a2c", help='The algorithm: ["ppo", "recurrent_ppo", "a2c"]'
 )
-parser.add_argument("--k8s", default=True, action="store_true", help="K8s mode")
-parser.add_argument(
-    "--goal", default="latency", help='Reward Goal: ["cost", "latency"]'
-)
+parser.add_argument("--k8s", default=False, action="store_true", help="K8s mode")
 
 parser.add_argument(
     "--training", default=True, action="store_true", help="Training mode"
@@ -63,7 +60,7 @@ def get_model(alg, env, tensorboard_log):
         )
     elif alg == "a2c":
         model = A2C(
-            "MlpPolicy", env, verbose=1, tensorboard_log=tensorboard_log
+            "MlpPolicy", env, verbose=1, tensorboard_log=tensorboard_log, n_steps=20
         )  # , n_steps=steps
     else:
         logger.info("Invalid algorithm!")
@@ -104,8 +101,7 @@ def main():
 
     alg = args.alg
     k8s = args.k8s
-    goal = args.goal
-    test_name = args.name
+    execution_name = args.name
     loading = args.loading
     load_path = args.load_path
     training = args.training
@@ -114,21 +110,22 @@ def main():
 
     steps = int(args.steps)
     total_steps = int(args.total_steps)
-
-    env = LatencyAware(namespace="learning", waiting_period=5)
+    
+    mode = "train" if training else "test"
 
     scenario = ""
     if k8s:
-        scenario = "real"
+        scenario = "online"
     else:
-        scenario = "simulated"
+        scenario = "offline"
 
-    tensorboard_log = "results/" + "latency" + "/" + scenario + "/" + goal + "/"
+    tensorboard_log = "results/" + "latency" + "/" + scenario + "/"
+    env = LatencyAware(namespace="learning",execution_name=execution_name , mode=mode,type=scenario)
 
     name = (
         alg
         + "_env_"
-        + test_name
+        + execution_name
         + "_k8s_"
         + str(k8s)
         + "_totalSteps_"

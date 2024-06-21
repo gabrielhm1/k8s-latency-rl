@@ -137,7 +137,6 @@ def get_worker_status(v1_client, namespace, ):
 
 def get_pod_info(pod_name, app_name, namespace="default"):
     V1_CLIENT = CoreV1Api()
-    # logger.info(f"Pod Name: {pod_name}, App Name: {app_name}")
     logger.info("Collecting neighbor of %s", app_name)
     neighbor_app = prometheus_metrics.create_graph(app_name, namespace)
     logger.debug(f"Neighbor: {neighbor_app}")
@@ -149,17 +148,16 @@ def get_pod_info(pod_name, app_name, namespace="default"):
     neighbor_labels = f"app in ({app_string})"
     prom_metrics = prometheus_metrics.get_metrics(neighbor_app, app_name, namespace)
 
-    logger.info(f"Getting Nodes")
+    logger.debug(f"Getting Nodes")
     current_neighbor = get_pod_node_list(V1_CLIENT, namespace, neighbor_labels)
     pods_by_node = get_worker_status(V1_CLIENT, namespace)
-    logger.info(f"Creating State Space")
+    logger.debug(f"Creating State Space")
     state_space = create_state_space(current_neighbor, prom_metrics, app_name, pods_by_node)
 
     return state_space
 
 def get_pod_info_offline(app_name,offline_env, namespace="default"):
     V1_CLIENT = CoreV1Api()
-    # logger.info(f"Pod Name: {pod_name}, App Name: {app_name}")
     logger.info("Collecting neighbor of %s", app_name)
     neighbor_app = prometheus_metrics.create_graph(app_name, namespace)
     logger.debug(f"Neighbor: {neighbor_app}")
@@ -173,9 +171,9 @@ def get_pod_info_offline(app_name,offline_env, namespace="default"):
 
 
 
-    logger.info(f"Getting Nodes")
+    logger.debug(f"Getting Nodes")
     current_neighbor = offline_env.get_apps_node(app_list)
-    logger.info(f"Creating State Space")
+    logger.debug(f"Creating State Space")
     state_space = create_state_space(current_neighbor, prom_metrics, app_name, offline_env.get_nodes())
 
     return state_space
