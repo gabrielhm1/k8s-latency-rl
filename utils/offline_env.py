@@ -25,7 +25,7 @@ class OfflineEnv():
             selected_node = random.randint(0, 2)
             self.apps_distribution[app][selected_node] = 1
             self.nodes_distribution[selected_node] += 1
-        self.workers = ["worker1", "worker2", "worker3"]
+        self.workers =  ["hpaworker1.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be", "hpaworker2.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be", "hpaworker3.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be"]
     
     def add_pod(self, app, node=None):
         if node is None:

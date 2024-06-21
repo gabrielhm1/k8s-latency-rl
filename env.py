@@ -18,11 +18,12 @@ from utils.offline_env import OfflineEnv
 
 logger = getLogger("model_logger")
 # Action Moves
-ACTIONS = ["worker1", "worker2", "worker3"]
+ACTIONS =  ["hpaworker1.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be", "hpaworker2.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be", "hpaworker3.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be"]
 NACTIONS = 3
-MAX_STEPS = 20
+MAX_STEPS = 25
 MAX_PODS = 15
 MAX_SPREAD = 4
+PENALTY = 2000
 
 APPS = [
     "frontend",
@@ -57,7 +58,7 @@ class LatencyAware(gym.Env):
         self.current_pod = {}
         self.pod_scheduled = []
         self.waiting_period = waiting_period  # seconds to wait after action
-        self.offline_env = OfflineEnv()
+        self.offline_env = OfflineEnv() if self.type == "offline" else None
 
         # Current Step
         self.current_step = 0
@@ -109,7 +110,7 @@ class LatencyAware(gym.Env):
             total_reward=self.total_reward,
         )
 
-        if self.current_step == MAX_STEPS:
+        if self.current_step == MAX_STEPS or self.episode_over:
             logger.info(
                 "[Episode {}] | Total Reward: {}".format(
                     self.episode_count, self.total_reward
@@ -121,12 +122,11 @@ class LatencyAware(gym.Env):
             save_to_csv(
                 self.file_results,
                 self.episode_count,
-                self.avg_latency/MAX_STEPS,
+                self.avg_latency/self.current_step,
                 self.total_reward,
-                self.execution_time,
+                self.current_step,
             )
             ob = np.zeros(53)
-            time.sleep(20)
         else:
             self.watch_scheduling_queue()
             ob = self.get_state()
@@ -152,7 +152,7 @@ class LatencyAware(gym.Env):
         self.total_reward = 0
         self.avg_latency = 0
         if self.pod_scheduled:
-            self.pod_scheduled = self.pod_scheduled[-5:]
+            self.pod_scheduled = self.pod_scheduled[-25:] if len(self.pod_scheduled) > 50 else self.pod_scheduled
         else:
             self.pod_scheduled = []
 
@@ -210,17 +210,18 @@ class LatencyAware(gym.Env):
         pod_in_node = ob[-3:]
         logger.debug("Pod in Node: %s", pod_in_node)
         if pod_in_node[action] > MAX_PODS:
-            ob.append(-50)
+            ob.append(-PENALTY)
             save_space_state(ob)
-            self.avg_latency += 50
-            return -50
+            self.avg_latency += PENALTY
+            self.episode_over = True
+            return -PENALTY
         
-        reward = 2.0 * calculate_latency(ob)
+        reward = 5.0 * calculate_latency(ob)
         logger.debug("Reward: %s", reward)
 
         self.avg_latency += reward
-        if reward >= 100:
-            reward = 100
+        if reward >= 500:
+            reward = 500
         ob.append(-reward)
         save_space_state(ob)
 
@@ -257,52 +258,52 @@ class LatencyAware(gym.Env):
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Average request 1 before
+                    50000,  # Average request 
                     1,  # Current Pod -- 2) productcatalogservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Average request 1 before
+                    50000,  # Average request 
                     1,  # Current Pod -- 3) cartservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 
                     1,  # Current Pod -- 4) adservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 
                     1,  # Current Pod -- 5) paymentservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 
                     1,  # Current Pod -- 6) shippingservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 
                     1,  # Current Pod -- 7) currencyservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 
                     1,  # Current Pod -- 8) checkoutservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 
                     1,  # Current Pod -- 9) frontend
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 
                     1,  # Current Pod -- 10) emailservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
-                    20000,  # Sum request 1 before
+                    50000,  # Sum request 
                     40,  # Worker-1
                     40,  # Worker-2
                     40  # Worker-3
@@ -310,3 +311,4 @@ class LatencyAware(gym.Env):
             ),
             dtype=np.int32,
         )
+

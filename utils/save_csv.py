@@ -13,7 +13,8 @@ def save_to_csv(file_name, episode, avg_latency, reward, execution_time):
                 "episode": episode,
                 "avg_latency": float("{:.4f}".format(avg_latency)),
                 "reward": float("{:.2f}".format(reward)),
-                "execution_time": float("{:.2f}".format(execution_time)),
+                # "execution_time": float("{:.2f}".format(execution_time)),
+                "execution_time": execution_time,
             }
         )
 

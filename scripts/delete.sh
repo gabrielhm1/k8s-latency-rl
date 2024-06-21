@@ -22,3 +22,5 @@ while [ true ]; do
         echo "No pods found in the array."
     fi
 done
+
+python3 run.py --name user_300_ppo_3_0_test --testing --test_path="ppo_env_user_300_ppo_3_0_k8s_True_totalSteps_100000.zip"

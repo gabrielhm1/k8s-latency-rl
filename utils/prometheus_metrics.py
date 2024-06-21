@@ -3,7 +3,7 @@ from logging import getLogger
 
 logger = getLogger("model_logger")
 
-URL = "http://193.190.127.206:30667"
+URL = "http://10.2.33.221:31050"
 
 
 def run_prometheus_query(query):

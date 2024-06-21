@@ -39,7 +39,7 @@ spec:
       initContainers:
         - name: download-locustfile
           image: busybox
-          command: ["wget", "-O", "/mnt/locust/locustfile.py", "https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/main/src/loadgenerator/locustfile.py"]
+          command: ["wget", "-O", "/mnt/locust/locustfile.py", "https://raw.githubusercontent.com/gabrielhm1/k8s-latency-rl/agent_2_ppo/scripts/locustfile.py"]
           volumeMounts:
             - name: locust-files
               mountPath: /mnt/locust
@@ -85,7 +85,7 @@ spec:
       initContainers:
         - name: download-locustfile
           image: busybox
-          command: ["wget", "-O", "/mnt/locust/locustfile.py", "https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/main/src/loadgenerator/locustfile.py"]
+          command: ["wget", "-O", "/mnt/locust/locustfile.py", "https://raw.githubusercontent.com/gabrielhm1/k8s-latency-rl/agent_2_ppo/scripts/locustfile.py"]
           volumeMounts:
             - name: locust-files
               mountPath: /mnt/locust

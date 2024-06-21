@@ -121,15 +121,16 @@ def get_worker_status(v1_client, namespace, ):
         namespace
     )
     workers = {
-        "worker1": 0,
-        "worker2": 0,
-        "worker3": 0,
+        "hpaworker1.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be": 0,
+        "hpaworker2.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be": 0,
+        "hpaworker3.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be": 0,
     }
     for pod in pods_reponse.items:
         if pod.metadata.labels.get("app", None) is None:
             logger.error(f"Pod {pod.metadata.name} has no app label")
         try:
-            workers[pod.spec.node_name] += 1
+            if pod.status.phase.lower() != "terminating" and "outofcpu":
+                workers[pod.spec.node_name] += 1
         except:
             pass
     return workers

@@ -12,7 +12,7 @@ def create_state_space(k8s_metrics, prom_metrics, service_name,node_list):
         "paymentservice",
         "currencyservice",
     ]
-    nodes = ["worker1", "worker2", "worker3"]
+    nodes =  ["hpaworker1.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be", "hpaworker2.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be", "hpaworker3.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be"]
     state_space = []
     for app in app_services:
         pod_nodes = k8s_metrics.get(app, None)
@@ -91,4 +91,4 @@ def calculate_latency(ob):
         total_weight += parcial_weight * ob[(app_index * 5) + 4]
 
     mean_latency = total_sum / total_weight if total_weight > 0 else 0
-    return mean_latency
+    return round(mean_latency, 2)

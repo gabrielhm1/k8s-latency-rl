@@ -16,15 +16,15 @@ logger = setup_logging()
 
 parser = argparse.ArgumentParser(description="Run ILP!")
 parser.add_argument(
-    "--alg", default="a2c", help='The algorithm: ["ppo", "recurrent_ppo", "a2c"]'
+    "--alg", default="ppo", help='The algorithm: ["ppo", "recurrent_ppo", "a2c"]'
 )
-parser.add_argument("--k8s", default=True, action="store_true", help="K8s mode")
+parser.add_argument("--k8s", default=False, action="store_true", help="K8s mode")
 parser.add_argument(
     "--goal", default="latency", help='Reward Goal: ["cost", "latency"]'
 )
 
 parser.add_argument(
-    "--training", default=True, action="store_true", help="Training mode"
+    "--training", default=False, action="store_true", help="Training mode"
 )
 parser.add_argument(
     "--testing", default=False, action="store_true", help="Testing mode"
@@ -46,7 +46,7 @@ parser.add_argument(
 parser.add_argument("--name", default="test", help="The name of the test.")
 
 parser.add_argument("--steps", default=200, help="The steps for saving.")
-parser.add_argument("--total_steps", default=10000, help="The total number of steps.")
+parser.add_argument("--total_steps", default=200000, help="The total number of steps.")
 
 args = parser.parse_args()
 
@@ -55,7 +55,18 @@ def get_model(alg, env, tensorboard_log):
     model = 0
     if alg == "ppo":
         model = PPO(
-            "MlpPolicy", env, verbose=1, tensorboard_log=tensorboard_log, n_steps=500
+            "MlpPolicy", env, verbose=1, tensorboard_log=tensorboard_log,
+            learning_rate=0.0003,
+            n_steps=1000,
+            batch_size=64,
+            n_epochs=10,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.2,
+            ent_coef=0.01,  # Increased for more exploration
+            vf_coef=0.5,
+            max_grad_norm=0.5,
+            target_kl=0.01,  # Target KL divergence
         )
     elif alg == "recurrent_ppo":
         model = RecurrentPPO(
@@ -115,7 +126,7 @@ def main():
     steps = int(args.steps)
     total_steps = int(args.total_steps)
 
-    env = LatencyAware(namespace="learning", waiting_period=5)
+    env = LatencyAware(namespace="learning", waiting_period=5, type="online",mode="test")
 
     scenario = ""
     if k8s:
@@ -142,7 +153,7 @@ def main():
 
     if training:
         if loading:  # resume training
-            logger.info("Loading model from: " + load_path)
+            logger.info(f"[INIT] | Training | Loading from: {load_path} ")
             model = get_load_model(alg, tensorboard_log, load_path)
             model.set_env(env)
             model.learn(
@@ -151,6 +162,7 @@ def main():
                 callback=checkpoint_callback,
             )
         else:
+            logger.info(f"[INIT] | Training | No Load ")
             model = get_model(alg, env, tensorboard_log)
             model.learn(
                 total_timesteps=total_steps,
@@ -161,6 +173,7 @@ def main():
         model.save(name)
 
     if testing:
+        logger.info(f"[INIT] | Testing | Loading from: {test_path} ")
         model = get_load_model(alg, tensorboard_log, test_path)
         test_model(
             model,
