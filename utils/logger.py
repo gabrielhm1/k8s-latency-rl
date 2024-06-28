@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import RotatingFileHandler
 
 
 def setup_logging():
@@ -6,9 +7,9 @@ def setup_logging():
     logger = logging.getLogger("model_logger")
     logger.setLevel(logging.DEBUG)
 
-    # Create file handlers
-    info_handler = logging.FileHandler("app_logs/info.log")
-    debug_error_handler = logging.FileHandler("app_logs/debug.log")
+    # Create file handlers with rotation
+    info_handler = RotatingFileHandler("app_logs/info.log", maxBytes=5*1024*1024, backupCount=5)
+    debug_error_handler = RotatingFileHandler("app_logs/debug.log", maxBytes=5*1024*1024, backupCount=5)
 
     # Set log levels for each handler
     info_handler.setLevel(logging.INFO)

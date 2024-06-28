@@ -60,7 +60,7 @@ class OfflineEnv():
         node_json = {}
         for i in range(len(self.workers)):
             node_json[self.workers[i]] = self.nodes_distribution[i]
-        print(node_json)
+        # print(node_json)
 
         return node_json
     def get_apps_node(self,apps):
@@ -74,7 +74,7 @@ class OfflineEnv():
                         apps_nodes[app].extend([self.workers[i]]*node_count)
         return apps_nodes
     def allocate_pod(self):
-        pod = random.choice(APPS)
+        pod = random.choices(population=APPS,weights=[0.2,0.1,0.04,0.2,0.1,0.04,0.04,0.04,0.04,0.2],k=1)[0]
         response = {
                             "pod_name": f"{pod}-pod-{random.randint(1, 1000)}",
                             "app_name": pod,

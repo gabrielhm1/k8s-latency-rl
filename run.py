@@ -16,13 +16,12 @@ logger = setup_logging()
 
 parser = argparse.ArgumentParser(description="Run ILP!")
 parser.add_argument(
-    "--alg", default="ppo", help='The algorithm: ["ppo", "recurrent_ppo", "a2c"]'
+    "--alg", default="a2c", help='The algorithm: ["ppo", "recurrent_ppo", "a2c"]'
 )
 parser.add_argument("--k8s", default=False, action="store_true", help="K8s mode")
 parser.add_argument(
     "--goal", default="latency", help='Reward Goal: ["cost", "latency"]'
 )
-
 parser.add_argument(
     "--training", default=False, action="store_true", help="Training mode"
 )
@@ -56,17 +55,7 @@ def get_model(alg, env, tensorboard_log):
     if alg == "ppo":
         model = PPO(
             "MlpPolicy", env, verbose=1, tensorboard_log=tensorboard_log,
-            learning_rate=0.0003,
-            n_steps=1000,
-            batch_size=64,
-            n_epochs=10,
-            gamma=0.99,
-            gae_lambda=0.95,
-            clip_range=0.2,
-            ent_coef=0.01,  # Increased for more exploration
-            vf_coef=0.5,
-            max_grad_norm=0.5,
-            target_kl=0.01,  # Target KL divergence
+            n_steps=500,
         )
     elif alg == "recurrent_ppo":
         model = RecurrentPPO(
@@ -178,7 +167,7 @@ def main():
         test_model(
             model,
             env,
-            n_episodes=100,
+            n_episodes=400,
             n_steps=110,
             smoothing_window=5,
             fig_name=name + "_test_reward.png",

@@ -20,10 +20,10 @@ logger = getLogger("model_logger")
 # Action Moves
 ACTIONS =  ["hpaworker1.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be", "hpaworker2.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be", "hpaworker3.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be"]
 NACTIONS = 3
-MAX_STEPS = 25
+MAX_STEPS = 20
 MAX_PODS = 15
 MAX_SPREAD = 4
-PENALTY = 2000
+PENALTY = 500
 
 APPS = [
     "frontend",
@@ -126,13 +126,11 @@ class LatencyAware(gym.Env):
                 self.total_reward,
                 self.current_step,
             )
+            print(f"Episode {self.episode_count} Over")
             ob = np.zeros(53)
         else:
             self.watch_scheduling_queue()
             ob = self.get_state()
-
-
-
         # return ob, reward, self.episode_over, self.info
         return np.array(ob), reward, self.episode_over, self.info
 
@@ -165,7 +163,7 @@ class LatencyAware(gym.Env):
         else:
             for app in APPS:
                 self.offline_env.scale(app, 1)
-            time.sleep(5)
+            time.sleep(0.5)
             self.current_pod = self.offline_env.allocate_pod()
 
         return np.array(self.get_state())
@@ -207,13 +205,13 @@ class LatencyAware(gym.Env):
         #         pod_spread = spread_difference
         # logger.debug("Pod Spread: %s", pod_spread)
         
-        pod_in_node = ob[-3:]
+        pod_in_node = ob[0:3]
         logger.debug("Pod in Node: %s", pod_in_node)
         if pod_in_node[action] > MAX_PODS:
             ob.append(-PENALTY)
             save_space_state(ob)
             self.avg_latency += PENALTY
-            self.episode_over = True
+            # self.episode_over = True
             return -PENALTY
         
         reward = 5.0 * calculate_latency(ob)
@@ -254,6 +252,9 @@ class LatencyAware(gym.Env):
             low=np.zeros(53),
             high=np.array(
                 [
+                    15,  # Worker-1
+                    15,  # Worker-2
+                    15,  # Worker-3
                     1,  # Current Pod  -- 1 recommendationservice
                     10,  # Pod on Worker-1
                     10,  # Pod on Worker-2
@@ -304,11 +305,8 @@ class LatencyAware(gym.Env):
                     10,  # Pod on Worker-2
                     10,  # Pod on Worker-3
                     50000,  # Sum request 
-                    40,  # Worker-1
-                    40,  # Worker-2
-                    40  # Worker-3
                 ]
             ),
-            dtype=np.int32,
+            dtype=np.float32,
         )
 
