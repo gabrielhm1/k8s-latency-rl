@@ -20,10 +20,10 @@ logger = getLogger("model_logger")
 # Action Moves
 ACTIONS =  ["hpaworker1.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be", "hpaworker2.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be", "hpaworker3.scalinghpa.ilabt-imec-be.wall2.ilabt.iminds.be"]
 NACTIONS = 3
-MAX_STEPS = 25
+MAX_STEPS = 20
 MAX_PODS = 15
 MAX_SPREAD = 4
-PENALTY = 2000
+PENALTY = 500
 
 APPS = [
     "frontend",
@@ -110,7 +110,7 @@ class LatencyAware(gym.Env):
             total_reward=self.total_reward,
         )
 
-        if self.current_step == MAX_STEPS or self.episode_over:
+        if self.current_step == MAX_STEPS:
             logger.info(
                 "[Episode {}] | Total Reward: {}".format(
                     self.episode_count, self.total_reward
@@ -213,7 +213,6 @@ class LatencyAware(gym.Env):
             ob.append(-PENALTY)
             save_space_state(ob)
             self.avg_latency += PENALTY
-            self.episode_over = True
             return -PENALTY
         
         reward = 5.0 * calculate_latency(ob)
