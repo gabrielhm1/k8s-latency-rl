@@ -33,7 +33,7 @@ def create_state_space(k8s_metrics, prom_metrics, service_name,node_list):
                     pod_nodes.count(nodes[0]),
                     pod_nodes.count(nodes[1]),
                     pod_nodes.count(nodes[2]),
-                    int(prom_metrics[app]),
+                    int(prom_metrics[app])/1000,
                 ]
             )
         else:
@@ -42,7 +42,7 @@ def create_state_space(k8s_metrics, prom_metrics, service_name,node_list):
     return state_space
 
 def calculate_latency(ob):
-    worker_latency = [5,4,7]
+    worker_latency = [7,5,4]
     app_services = [
         "frontend",
         "recommendationservice",
@@ -55,6 +55,7 @@ def calculate_latency(ob):
         "paymentservice",
         "currencyservice",
     ]
+    
     total_requests = 0
     app_weights = []
     mean_latency = 0

@@ -1,6 +1,8 @@
 from utils.logger import setup_logging
 import argparse
 
+import os
+
 from setuptools.command.alias import alias
 from stable_baselines3 import PPO
 from stable_baselines3 import A2C
@@ -16,12 +18,12 @@ logger = setup_logging()
 
 parser = argparse.ArgumentParser(description="Run ILP!")
 parser.add_argument(
-    "--alg", default="a2c", help='The algorithm: ["ppo", "recurrent_ppo", "a2c"]'
+    "--alg", default="ppo", help='The algorithm: ["ppo", "recurrent_ppo", "a2c"]'
 )
 parser.add_argument("--k8s", default=False, action="store_true", help="K8s mode")
 
 parser.add_argument(
-    "--training", default=True, action="store_true", help="Training mode"
+    "--training", default=False, action="store_true", help="Training mode"
 )
 parser.add_argument(
     "--testing", default=False, action="store_true", help="Testing mode"
@@ -42,8 +44,8 @@ parser.add_argument(
 
 parser.add_argument("--name", default="test", help="The name of the test.")
 
-parser.add_argument("--steps", default=200, help="The steps for saving.")
-parser.add_argument("--total_steps", default=100000, help="The total number of steps.")
+parser.add_argument("--steps", default=10000, help="The steps for saving.")
+parser.add_argument("--total_steps", default=500000, help="The total number of steps.")
 
 args = parser.parse_args()
 
@@ -52,7 +54,7 @@ def get_model(alg, env, tensorboard_log):
     model = 0
     if alg == "ppo":
         model = PPO(
-            "MlpPolicy", env, verbose=1, tensorboard_log=tensorboard_log, n_steps=500
+            "MlpPolicy", env, verbose=1, tensorboard_log=tensorboard_log, n_steps=1000
         )
     elif alg == "recurrent_ppo":
         model = RecurrentPPO(
@@ -60,7 +62,7 @@ def get_model(alg, env, tensorboard_log):
         )
     elif alg == "a2c":
         model = A2C(
-            "MlpPolicy", env, verbose=1, tensorboard_log=tensorboard_log, n_steps=20
+            "MlpPolicy", env, verbose=1, tensorboard_log=tensorboard_log, n_steps=10
         )  # , n_steps=steps
     else:
         logger.info("Invalid algorithm!")
@@ -75,7 +77,7 @@ def get_load_model(alg, tensorboard_log, load_path):
             reset_num_timesteps=False,
             verbose=1,
             tensorboard_log=tensorboard_log,
-            n_steps=500,
+            n_steps=1000,
         )
     elif alg == "recurrent_ppo":
         return RecurrentPPO.load(
@@ -112,7 +114,7 @@ def main():
     total_steps = int(args.total_steps)
     
     mode = "train" if training else "test"
-
+    os.makedirs(f"data/{execution_name}", exist_ok=True)
     scenario = ""
     if k8s:
         scenario = "online"
@@ -120,7 +122,7 @@ def main():
         scenario = "offline"
 
     tensorboard_log = "results/" + "latency" + "/" + scenario + "/"
-    env = LatencyAware(namespace="learning",execution_name=execution_name , mode=mode,type=scenario)
+    env = LatencyAware(namespace="learning",execution_name=execution_name , mode=mode,type=scenario, episode=0)
 
     name = (
         alg
@@ -158,6 +160,7 @@ def main():
         model.save(name)
 
     if testing:
+        logger.info(f"[TESTING] {execution_name}")
         model = get_load_model(alg, tensorboard_log, test_path)
         test_model(
             model,

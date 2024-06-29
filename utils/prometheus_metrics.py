@@ -45,7 +45,7 @@ def create_graph(service_name, namespace="onlineboutique"):
 
 def get_metrics(app_graph, service_name, namespace):
     app_metrics = {}
-    print("Initial get_metrics")
+    # print("Initial get_metrics")
 
     try:
         app_graph["destination"].remove("unknown")

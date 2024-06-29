@@ -41,7 +41,6 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -144,7 +143,6 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -256,7 +254,6 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -364,7 +361,6 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -498,7 +494,6 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -600,7 +595,6 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -702,7 +696,6 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -806,7 +799,6 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -908,7 +900,6 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:
@@ -1079,7 +1070,6 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      schedulerName: latency-aware
       containers:
         - name: server
           securityContext:

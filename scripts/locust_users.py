@@ -2,9 +2,9 @@ import requests
 import random
 from time import sleep
 
-URL = "http://193.190.127.206:31170/swarm"
+URL = "http://193.190.127.206:31170"
 MIN_USERS = 5
-MAX_USERS = 400 
+MAX_USERS = 300 
 # 50 - 100 - 50 - 150 - 50 - 250 - 50 - 350 - 50 - 400
 
 
@@ -44,30 +44,30 @@ def change_user():
         user_up = 0
         current_user = MIN_USERS
         waiting_period = 0
-        for x in range(0, 9):
+        for x in range(0, 7):
             print(x)
             try:
                 spawn_rate = 1
                 if x == 0:
                     current_user = MIN_USERS
-                    waiting_period = 120
-                    spawn_rate = 100
+                    waiting_period = 300
+                    spawn_rate = 1
                 if x >= 1:
                     user_up += 50
                     if user_up > MAX_USERS:
                         user_up = MAX_USERS
                     current_user = user_up
-                    waiting_period = 90
+                    waiting_period = 200
                 payload = {
                     "user_count": current_user,
                     "spawn_rate": spawn_rate,
                 }
-                response = requests.post(URL, data=payload)
+                response = requests.post(f"{URL}/swarm", data=payload)
                 print(f"Users: {current_user}")
                 sleep(waiting_period)
             except Exception as e:
                 print(e)
-
+        response = requests.get(f"{URL}/stats/reset")
 
 
 if __name__ == "__main__":
