@@ -18,7 +18,10 @@ import random
 from locust import FastHttpUser, TaskSet, between
 from faker import Faker
 import datetime
+import locust.util.stats
+
 fake = Faker()
+locust.util.stats.CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW = 120
 
 products = [
     '0PUK6V6EV0',
