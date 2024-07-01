@@ -18,8 +18,6 @@ import random
 from locust import FastHttpUser, TaskSet, between
 from faker import Faker
 import datetime
-import locust.stats
-locust.stats.CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW = 120
 
 fake = Faker()
 products = [
@@ -85,9 +83,9 @@ class UserBehavior(TaskSet):
     tasks = {index: 1,
         setCurrency: 1,
         browseProduct: 5,
-        addToCart: 4,
-        viewCart: 7,
-        checkout: 10}
+        addToCart: 3,
+        viewCart: 4,
+        checkout: 7}
 
 class WebsiteUser(FastHttpUser):
     tasks = [UserBehavior]
