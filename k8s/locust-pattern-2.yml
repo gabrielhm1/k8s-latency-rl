@@ -54,6 +54,10 @@ spec:
           ports:
             - containerPort: 8089
             - containerPort: 5557
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "500m"
           volumeMounts:
             - name: locust-files
               mountPath: /mnt/locust
@@ -92,10 +96,14 @@ spec:
       containers:
         - name: locust
           image: locustio/locust:latest
-          command: 
+          command:
             - "/bin/bash"
             - "-c"
             - "pip install Faker && locust -f /mnt/locust/locustfile.py --worker --master-host locust-master"
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "500m"
           volumeMounts:
             - name: locust-files
               mountPath: /mnt/locust
